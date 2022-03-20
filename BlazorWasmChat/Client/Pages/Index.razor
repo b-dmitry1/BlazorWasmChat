@@ -1,0 +1,171 @@
+﻿@page "/"
+
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorWasmChat.Shared;
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@implements IAsyncDisposable
+
+<PageTitle>Чат</PageTitle>
+
+<div class="container">
+
+    <div class="sidebar">
+        <div style="background-color:whitesmoke;">
+            <label>Ваше имя:
+                <input @bind="userName" style="width: 280px;" />
+            </label>
+
+            @if (rooms is not null)
+            {
+                <p></p><label>Комнаты:
+                    <select @bind="@roomId" size="10" style="width: 280px;">
+                        @foreach (var room in rooms)
+                        {
+                            <option>@room.Name</option>
+                        }
+                    </select>
+                </label>
+            }
+            else
+            {
+                <p>Загрузка списка комнат, подождите...</p>
+            }
+        </div>
+    </div>
+
+
+    <div class="main">
+        <h2>@(roomId ?? "Выберите комнату")</h2>
+        <div>
+            <form action="javascript:void()">
+            <label>Сообщение:
+                <br><input @bind="messageText" style="width: 480px;" />
+            </label>
+            <input type="submit" @onclick="Send" hidden />
+            </form>
+        </div>
+
+        <div>
+            @foreach (var message in messages
+                .Where(x => x.RoomId == roomId)
+                .TakeLast(maxMessages))
+            {
+                <div class="message-time">@message.Issued</div>
+                <div class="message-text">@message</div>
+            }
+        </div>
+    </div>
+
+</div>
+
+
+
+
+@code {
+    private readonly int maxMessages = 10;
+
+    private HubConnection? hubConnection;
+    private System.Threading.Timer? timer;
+
+    private List<ChatMessage> messages = new List<ChatMessage>();
+    private ChatRoom[]? rooms;
+
+    private string? userName;
+    private string? messageText;
+    private string? roomId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"))
+            .Build();
+
+        hubConnection.On<ChatMessage>("ReceiveMessage", (message) =>
+        {
+            messages.Add(message);
+
+            if (message.FromUser == userName &&
+                message.RoomId == roomId &&
+                message.Text == messageText)
+            {
+                messageText = "";
+            }
+
+            StateHasChanged();
+        });
+
+        await hubConnection.StartAsync();
+
+        var timerLocked = false;
+
+        timer = new System.Threading.Timer(async (object? stateInfo) =>
+        {
+            // Простейший механизм блокировки повторного входа в процедуру
+            if (timerLocked)
+            {
+                return;
+            }
+            timerLocked = true;
+
+            try
+            {
+                rooms = await Http.GetFromJsonAsync<ChatRoom[]>("/api/chatrooms");
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            timerLocked = false;
+        }, null, 2000, 5000);
+    }
+
+    private async Task Send()
+    {
+        // Проверка заполнения полей формы перед отправкой
+        if (userName is null || userName.Length == 0)
+        {
+            return;
+        }
+
+        if (messageText is null || messageText.Length == 0)
+        {
+            return;
+        }
+
+        if (roomId is null)
+        {
+            return;
+        }
+
+        // Проверка подключения к hub
+        if (hubConnection is null ||
+            hubConnection.ConnectionId is null)
+        {
+            return;
+        }
+
+        // Подготовить и отправить новое сообщение
+        var message = new ChatMessage
+        {
+            FromUser = userName,
+            RoomId = roomId,
+            Text = messageText
+        };
+
+        await hubConnection.SendAsync("SendMessage", message);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

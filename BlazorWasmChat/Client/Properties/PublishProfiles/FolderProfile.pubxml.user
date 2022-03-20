@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>I:\test\cs\BlazorWasmChat\BlazorWasmChat\Client\bin\Release\net6.0\browser-wasm\publish\</_PublishTargetUrl>
+    <History>True|2022-03-19T21:56:52.4324173Z;False|2022-03-20T00:47:00.2080226+03:00;False|2022-03-20T00:46:29.0534153+03:00;</History>
+  </PropertyGroup>
+</Project>
