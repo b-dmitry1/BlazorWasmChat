@@ -1,0 +1,51 @@
+﻿@page "/login"
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+
+<div class="d-flex justify-content-center">
+    <div>
+        <AuthorizeView>
+            <NotAuthorized Context="Auth">
+                <h3>Авторизация</h3>
+                <EditForm Model="user" OnSubmit="HandleLogin">
+                    <p/>Имя пользователя:
+                    <br/><InputText @bind-Value="user.UserName" />
+                    <p/>Пароль:
+                    <br/><InputText @bind-Value="user.Password" type="password" />
+                    <p/><button type="submit">Вход</button>
+                </EditForm>
+            </NotAuthorized>
+            <Authorized>
+                <div>
+                    <p/>Вот ваш токен авторизации.
+                    <p/>Вы можете использовать его для доступа к сервисам без ввода пароля:
+                    <p/><textarea cols="40" rows="10">@tok</textarea>
+                    <p/><a href="/">Перейти в чат</a>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    UserLogin user = new UserLogin();
+
+    string tok = string.Empty;
+
+    async Task HandleLogin()
+    {
+        var result = await Http.PostAsJsonAsync("api/auth", user);
+
+        var token = await result.Content.ReadAsStringAsync();
+
+        await LocalStorage.SetItemAsync("token", token);
+
+        await AuthStateProvider.GetAuthenticationStateAsync();
+
+        tok = token;
+
+        // NavigationManager.NavigateTo("/");
+    }
+}
