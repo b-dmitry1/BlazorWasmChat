@@ -11,7 +11,7 @@
                 <h3>Регистрация</h3>
                 <EditForm Model="user" OnSubmit="HandleRegister">
                     <p/>Имя пользователя:
-                    <br/><InputText @bind-Value="user.UserName" readonly="true"/>
+                    <br/><InputText @bind-Value="user.UserName" />
                     <p/>Пароль:
                     <br/><InputText @bind-Value="user.Password" type="password" />
                     <p/>Пароль (повторите ввод):

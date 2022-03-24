@@ -20,7 +20,7 @@
             <AuthorizeView>
                 <Authorized>
                     <label>Ваше имя:
-                        <input value="@context?.User?.Identity?.Name" style="width: 280px;" />
+                        <input value="@context?.User?.Identity?.Name" style="width: 280px;" readonly="true" />
                     </label>
                     <p/><button @onclick="Logout" >Выйти</button>
                 </Authorized>
