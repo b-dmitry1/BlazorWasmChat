@@ -92,7 +92,7 @@
     {
         var token = await LocalStorage.GetItemAsStringAsync("token");
 
-        startHubConnection(token);
+        await startHubConnection(token);
 
         var timerLocked = false;
 
@@ -136,13 +136,6 @@
         {
             messages.Add(message);
 
-            if (message.FromUser == userName &&
-                message.RoomId == roomId &&
-                message.Text == messageText)
-            {
-                messageText = "";
-            }
-
             StateHasChanged();
         });
 
@@ -184,6 +177,8 @@
             RoomId = roomId,
             Text = messageText
         };
+
+        messageText = string.Empty;
 
         // Вызвать метод SendMessage на сервере
         await hubConnection.SendAsync("SendMessage", message);

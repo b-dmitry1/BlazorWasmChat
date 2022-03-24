@@ -4,9 +4,6 @@ using BlazorWasmChat.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
-// Данные приложения
-var Rooms = new List<ChatRoom>();
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Добавить основные сервисы
@@ -21,10 +18,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		options.TokenValidationParameters = Auth.MakeTokenValidationParameters();
 		options.Events = new JwtBearerEvents
         {
+            // Для корректной работы авторизации в SignalR нам необходимо
+            // вручную извлечь из строки запроса токен авторизации
+            // и преобразовать его к исходному виду
             OnMessageReceived = context =>
             {
                 var path = context.HttpContext.Request.Path;
 
+                // Нам нужны только запросы к концентраторам сообщений
+                // Добавьте здесь другие пути при необходимости
                 if (path.StartsWithSegments("/chathub"))
                 {
                     // Это запрос SignalR

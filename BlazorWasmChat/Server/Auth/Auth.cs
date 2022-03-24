@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.DirectoryServices;
 
 namespace BlazorWasmChat.Server.Authorization
 {
@@ -43,15 +44,22 @@ namespace BlazorWasmChat.Server.Authorization
 		{
 			// Здесь необходимо проверить имя пользователя и пароль
 			// После чего можно сформировать и вернуть токен
-			// В случае ошибки проверки нужно сгенерировать исключение
 
+			bool auth;
 
+			auth =
+				AuthActiveDirectory.IsUserInActiveDirectory(username, password) ||
+				AuthLocal.TryAuthLocal(username, password);
+
+			if (!auth)
+			{ 
+				return "";
+			}
+
+			var claims = new List<Claim>();
 
 			// В этом месте добавляем наши произвольные значения
-			var claims = new List<Claim>
-			{
-				new Claim(ClaimTypes.Name, username)
-			};
+			claims.Add(new Claim(ClaimTypes.Name, username));
 
 			var signingCredentials = new SigningCredentials(CreateSecurityKey(), SecurityAlgorithms.HmacSha256);
 

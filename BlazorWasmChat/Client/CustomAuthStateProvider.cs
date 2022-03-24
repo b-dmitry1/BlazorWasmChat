@@ -19,13 +19,13 @@ namespace BlazorWasmChat.Client
 
 		public override async Task<AuthenticationState> GetAuthenticationStateAsync()
 		{
-			var token = await _localStorage.GetItemAsStringAsync("token");
+			string token = await _localStorage.GetItemAsStringAsync("token");
 
 			_httpClient.DefaultRequestHeaders.Authorization = null;
 
 			var identity = new ClaimsIdentity();
 
-			if (!string.IsNullOrEmpty(token))
+			if (token != null && token.Length > 10)
 			{
 				identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
 				_httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Replace("\"", ""));
@@ -61,6 +61,22 @@ namespace BlazorWasmChat.Client
 			var kv = JsonSerializer.Deserialize<Dictionary<string, object>>(data);
 
 			return kv!.Select(p => new Claim(p.Key, p.Value.ToString()!));
+		}
+
+		public bool IsValidToken(string token)
+		{
+			if (token == null)
+			{
+				return false;
+			}
+
+			var elements = token.Split('.');
+			if (elements.Length < 3)
+			{
+				return false;
+			}
+
+			return true;
 		}
 	}
 }

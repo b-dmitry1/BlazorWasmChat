@@ -1,0 +1,53 @@
+﻿@page "/register"
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+
+<div class="d-flex justify-content-center">
+    <div>
+        <AuthorizeView>
+            <NotAuthorized Context="Auth">
+                <h3>Регистрация</h3>
+                <EditForm Model="user" OnSubmit="HandleRegister">
+                    <p/>Имя пользователя:
+                    <br/><InputText @bind-Value="user.UserName" readonly="true"/>
+                    <p/>Пароль:
+                    <br/><InputText @bind-Value="user.Password" type="password" />
+                    <p/>Пароль (повторите ввод):
+                    <br/><InputText @bind-Value="passwordRepeat" type="password" />
+                    <p/><button type="submit">Зарегистрироваться</button>
+                    <p/><span class="text-danger">@errorMessage</span>
+                </EditForm>
+            </NotAuthorized>
+            <Authorized>
+                <div>
+                    <p/>Вы уже авторизованы!
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <p/><a href="/">Перейти на главную страницу</a>
+    </div>
+</div>
+
+@code {
+    UserLogin user = new UserLogin();
+
+    string passwordRepeat = string.Empty;
+
+    string errorMessage = string.Empty;
+
+    async Task HandleRegister()
+    {
+        if (user.Password != passwordRepeat)
+        {
+            errorMessage = "Пароль не совпадает!";
+            return;
+        }
+
+        var result = await Http.PostAsJsonAsync("api/register", user);
+
+        errorMessage = await result.Content.ReadAsStringAsync();
+    }
+}

@@ -15,6 +15,8 @@
                     <p/>Пароль:
                     <br/><InputText @bind-Value="user.Password" type="password" />
                     <p/><button type="submit">Вход</button>
+                    <span class="text-danger">@errorMessage</span>
+                    <p/>Нет учетной записи? <a href="/register">Зарегистрируйтесь</a>
                 </EditForm>
             </NotAuthorized>
             <Authorized>
@@ -32,6 +34,8 @@
 @code {
     UserLogin user = new UserLogin();
 
+    string errorMessage = string.Empty;
+
     string tok = string.Empty;
 
     async Task HandleLogin()
@@ -42,9 +46,17 @@
 
         await LocalStorage.SetItemAsync("token", token);
 
-        await AuthStateProvider.GetAuthenticationStateAsync();
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
 
         tok = token;
+
+        if (token == null || !((AuthStateProvider as CustomAuthStateProvider)?.IsValidToken(token) ?? false))
+        {
+            errorMessage = "Не удалось авторизоваться";
+            return;
+        }
+
+        errorMessage = string.Empty;
 
         // NavigationManager.NavigateTo("/");
     }
