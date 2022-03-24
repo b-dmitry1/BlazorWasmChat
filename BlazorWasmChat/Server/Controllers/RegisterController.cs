@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BlazorWasmChat.Shared;
-using BlazorWasmChat.Server.Authorization;
 
 namespace BlazorWasmChat.Server.Controllers
 {
+	// Регистрация нового пользователя
 	[Route("api/[controller]")]
 	[ApiController]
 	public class RegisterController : ControllerBase
@@ -11,6 +11,7 @@ namespace BlazorWasmChat.Server.Controllers
 		[HttpPost]
 		public async Task<ActionResult<string>> AddUser(UserLogin request)
 		{
+			// Проверить полученные данные
 			if (string.IsNullOrEmpty(request.UserName))
 			{
 				return "Требуется имя пользователя";
@@ -26,12 +27,18 @@ namespace BlazorWasmChat.Server.Controllers
 				return "Пользователь с таким именем уже зарегистрирован";
 			}
 
+			// Добавить пользователя в базу данных
 			string res;
-
 			try
 			{
-				Chat.Users.Add(request);
-				res = "OK";
+				if (Chat.AddUser(request))
+				{
+					res = "OK";
+				}
+				else
+				{
+					res = "Не удалось добавить пользователя";
+				}
 			}
 			catch (Exception ex)
 			{

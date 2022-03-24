@@ -7,6 +7,8 @@
 <div class="d-flex justify-content-center">
     <div>
         <AuthorizeView>
+
+            @* Если пользователь не авторизован, то вывести форму *@
             <NotAuthorized Context="Auth">
                 <h3>Авторизация</h3>
                 <EditForm Model="user" OnSubmit="HandleLogin">
@@ -19,6 +21,8 @@
                     <p/>Нет учетной записи? <a href="/register">Зарегистрируйтесь</a>
                 </EditForm>
             </NotAuthorized>
+
+            @* Если пользователь авторизован, то вывести токен и предложить перейти в чат *@
             <Authorized>
                 <div>
                     <p/>Вот ваш токен авторизации.
@@ -27,30 +31,36 @@
                     <p/><a href="/">Перейти в чат</a>
                 </div>
             </Authorized>
+
         </AuthorizeView>
     </div>
 </div>
 
 @code {
+    // Поля формы
     UserLogin user = new UserLogin();
 
     string errorMessage = string.Empty;
 
     string tok = string.Empty;
 
+    // Действие при нажатии кнопки "Вход"
     async Task HandleLogin()
     {
+        // Попробуем авторизоваться и получить токен
         var result = await Http.PostAsJsonAsync("api/auth", user);
 
         var token = await result.Content.ReadAsStringAsync();
 
+        // Сохраним токен
         await LocalStorage.SetItemAsync("token", token);
 
+        // Обновим состояние авторизации
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
 
         tok = token;
 
-        if (token == null || !((AuthStateProvider as CustomAuthStateProvider)?.IsValidToken(token) ?? false))
+        if ((token is null) || !((AuthStateProvider as CustomAuthStateProvider)?.IsTokenValid(token) ?? false))
         {
             errorMessage = "Не удалось авторизоваться";
             return;
@@ -58,6 +68,8 @@
 
         errorMessage = string.Empty;
 
+        // Если нужно в случае успешной авторизации сразу перейти
+        // на основную страницу, раскомментируйте следующую строку:
         // NavigationManager.NavigateTo("/");
     }
 }

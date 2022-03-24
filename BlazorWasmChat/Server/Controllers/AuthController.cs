@@ -4,17 +4,18 @@ using BlazorWasmChat.Server.Authorization;
 
 namespace BlazorWasmChat.Server.Controllers
 {
+	// Контроллер авторизации
 	[Route("api/[controller]")]
 	[ApiController]
-
 	public class AuthController : ControllerBase
 	{
 		[HttpPost]
-		public async Task<ActionResult<string>> Login(UserLogin request)
+		public async Task<ActionResult<string>> Login(UserLogin user)
 		{
-			var token = Auth.AuthorizeByNameAndPassword(request.UserName, request.Password);
+			// Попробовать авторизовать пользователя и вернуть токен клиенту
+			var token = Auth.AuthorizeByNameAndPassword(user);
 
-			return token;
+			return await Task.FromResult(token);
 		}
 	}
 }

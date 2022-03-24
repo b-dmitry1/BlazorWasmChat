@@ -9,8 +9,14 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// Добавим наш поставщик механизма авторизации
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+
+// Добавим авторизацию
 builder.Services.AddAuthorizationCore();
+
+// Добавим сервис доступа к локальному хранилищу браузера
 builder.Services.AddBlazoredLocalStorage();
 
 await builder.Build().RunAsync();

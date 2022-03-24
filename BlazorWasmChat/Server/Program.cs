@@ -1,6 +1,5 @@
 using BlazorWasmChat.Server.Authorization;
 using BlazorWasmChat.Server.Hubs;
-using BlazorWasmChat.Shared;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 
@@ -10,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
-// Добавить Jwt
+// Добавить сервисы авторизации и аутентификации
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>
@@ -73,7 +72,7 @@ app.UseStaticFiles();
 // Маршрутизация запросов
 app.UseRouting();
 
-// Использовать Jwt
+// Нам нужна авторизация и аутентификация
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -89,6 +88,10 @@ app.Map("/private", [Authorize] () =>
 {
     return "Защищенное содержимое";
 });
+
+// Добавим наши сервисы авторизации
+Chat.AuthProviders.Add(new ActiveDirectoryAuthProvider());
+Chat.AuthProviders.Add(new LocalAuthProvider());
 
 app.Run();
 

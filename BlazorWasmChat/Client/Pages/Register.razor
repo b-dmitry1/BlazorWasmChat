@@ -7,6 +7,8 @@
 <div class="d-flex justify-content-center">
     <div>
         <AuthorizeView>
+
+            @* Если пользователь не авторизован, то вывести регистрационную форму *@
             <NotAuthorized Context="Auth">
                 <h3>Регистрация</h3>
                 <EditForm Model="user" OnSubmit="HandleRegister">
@@ -16,10 +18,12 @@
                     <br/><InputText @bind-Value="user.Password" type="password" />
                     <p/>Пароль (повторите ввод):
                     <br/><InputText @bind-Value="passwordRepeat" type="password" />
-                    <p/><button type="submit">Зарегистрироваться</button>
                     <p/><span class="text-danger">@errorMessage</span>
+                    <p/><button type="submit">Зарегистрироваться</button>
                 </EditForm>
             </NotAuthorized>
+
+            @* Если пользователь авторизован, то вывести сообщение об ошибке *@
             <Authorized>
                 <div>
                     <p/>Вы уже авторизованы!
@@ -32,20 +36,24 @@
 </div>
 
 @code {
+    // Поля формы
     UserLogin user = new UserLogin();
 
     string passwordRepeat = string.Empty;
 
     string errorMessage = string.Empty;
 
+    // Действие при нажатии кнопки "Зарегистрироваться"
     async Task HandleRegister()
     {
+        // Сначала проверим совпадение пароля
         if (user.Password != passwordRepeat)
         {
             errorMessage = "Пароль не совпадает!";
             return;
         }
 
+        // Отправим запрос серверу и отобразим результат
         var result = await Http.PostAsJsonAsync("api/register", user);
 
         errorMessage = await result.Content.ReadAsStringAsync();

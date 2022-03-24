@@ -15,20 +15,26 @@
 
 <div class="container">
 
+    @* Боковая панель *@
     <div class="sidebar">
         <div style="background-color:whitesmoke;">
             <AuthorizeView>
+
+                @* Если пользователь авторизован, то вывести его имя и кнопку выхода *@
                 <Authorized>
                     <label>Ваше имя:
-                        <input value="@context?.User?.Identity?.Name" style="width: 280px;" readonly="true" />
+                        <input value="@context?.User?.Identity?.Name" style="width: 280px;" readonly/>
                     </label>
                     <p/><button @onclick="Logout" >Выйти</button>
                 </Authorized>
+
+                @* Если пользователь не авторизован, то предложить вход в систему *@
                 <NotAuthorized>
                     Пожалуйста, <a href="/login">авторизуйтесь</a>
                 </NotAuthorized>
             </AuthorizeView>
 
+            @* Выведем список комнат чата *@
             @if (rooms is not null)
             {
                 <p></p><label>Комнаты:
@@ -47,18 +53,25 @@
         </div>
     </div>
 
-
+    @* Чат *@
     <div class="main">
         <h2>@(roomId ?? "Выберите комнату")</h2>
+
+        @* Мини-форма для ввода сообщения *@
         <div>
             <form action="javascript:void()">
-            <label>Сообщение:
-                <br><input @bind="messageText" style="width: 480px;" />
-            </label>
-            <input type="submit" @onclick="Send" hidden />
+            
+                <label>Сообщение:
+                    <br><input @bind="messageText" style="width: 480px;" />
+                </label>
+
+                @* Невидимая кнопка, реагирующая на нажатие клавиши Enter *@
+                <input type="submit" @onclick="Send" @onkeypress:preventDefault hidden />
+            
             </form>
         </div>
 
+        @* Поле для вывода сообщений *@
         <div>
             @foreach (var message in messages
                 .Where(x => x.RoomId == roomId)
@@ -76,35 +89,44 @@
 
 
 @code {
+    // Максимальное количество сообщений на экране
     private readonly int maxMessages = 10;
 
+    // Подключение SignalR
     private HubConnection? hubConnection;
+
+    // Таймер для обновления списка комнат
     private System.Threading.Timer? timer;
 
+    // Хранилище сообщений и списка комнат
     private List<ChatMessage> messages = new List<ChatMessage>();
     private ChatRoom[]? rooms;
 
-    private string? userName;
+    // Поля формы
     private string? messageText;
     private string? roomId;
 
     protected override async Task OnInitializedAsync()
     {
+        // Получить токен авторизации из локального хранилища
         var token = await LocalStorage.GetItemAsStringAsync("token");
 
+        // Подключиться к концентратору SignalR
         await startHubConnection(token);
 
+        // Запустить таймер, обновляющий список комнат
+        // Первое срабатывание через 2 секунды, потом каждые 5 секунд
         var timerLocked = false;
-
         timer = new System.Threading.Timer(async (object? stateInfo) =>
         {
-        // Простейший механизм блокировки повторного входа в процедуру
-        if (timerLocked)
+            // Простейший механизм блокировки повторного входа в процедуру
+            if (timerLocked)
             {
                 return;
             }
             timerLocked = true;
 
+            // Загрузить список комнат
             try
             {
                 rooms = await Http.GetFromJsonAsync<ChatRoom[]>("/api/chatrooms");
@@ -126,6 +148,7 @@
         hubConnection = new HubConnectionBuilder()
             .WithUrl(NavigationManager.ToAbsoluteUri("/chathub"), options =>
             {
+                // Добавить токен пользователя
                 options.AccessTokenProvider = () => Task.FromResult(token);
             })
             .WithAutomaticReconnect()
@@ -142,8 +165,10 @@
         await hubConnection.StartAsync();
     }
 
+    // Действие при нажатии кнопки "Отправить"
     private async Task Send()
     {
+        // Получить имя пользователя
         var auth = await AuthStateProvider.GetAuthenticationStateAsync();
         var userName = auth?.User?.Identity?.Name;
 
@@ -178,6 +203,7 @@
             Text = messageText
         };
 
+        // Очистить поле ввода текста сообщения
         messageText = string.Empty;
 
         // Вызвать метод SendMessage на сервере
@@ -186,20 +212,21 @@
 
     async Task Logout()
     {
-        // 1. Удалить токен авторизации из хранилища
+        // Удалить токен авторизации из хранилища
         await LocalStorage.RemoveItemAsync("token");
 
-        // 2. Обновить состояние авторизации
+        // Обновить состояние авторизации
         await AuthStateProvider.GetAuthenticationStateAsync();
 
-        // 3. Перезапустить соединение SignalR с пустым токеном
+        // Перезапустить соединение SignalR с пустым токеном
         await hubConnection!.DisposeAsync();
         await startHubConnection("");
 
-        // 4. Перейти на главную страницу
+        // Перейти на главную страницу
         NavigationManager.NavigateTo("/");
     }
 
+    // Корректное завешение соединения
     public async ValueTask DisposeAsync()
     {
         if (hubConnection is not null)
